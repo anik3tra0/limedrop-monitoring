@@ -11,3 +11,50 @@
 <strong>Current Memory Usage:</strong> {{ template "prom_query_drilldown" (args "100 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100" "%") }}
 {{template "prom_content_tail" .}}
 {{template "tail"}}
+
+{{template "head" .}}
+
+{{template "prom_right_table_head"}}
+<tr>
+    <th>MyJob</th>
+    <th>{{ template "prom_query_drilldown" (args "sum(up{job='node-exporter'})") }}
+        / {{ template "prom_query_drilldown" (args "count(up{job='node-exporter'})") }}
+    </th>
+</tr>
+<tr>
+    <td>CPU</td>
+    <td>{{ template "prom_query_drilldown" (args
+        "avg by(job)(rate(process_cpu_seconds_total{job='node-exporter'}[5m]))"
+        "s/s" "humanizeNoSmallPrefix") }}
+    </td>
+</tr>
+<tr>
+    <td>Memory</td>
+    <td>{{ template "prom_query_drilldown" (args
+        "avg by(job)(process_resident_memory_bytes{job='node-exporter'})"
+        "B" "humanize1024") }}
+    </td>
+</tr>
+{{template "prom_right_table_tail"}}
+
+
+{{template "prom_content_head" .}}
+<h1>Node Exporter</h1>
+
+<h3>Queries</h3>
+<div id="queryGraph"></div>
+<script>
+    new PromConsole.Graph({
+        node: document.querySelector("#queryGraph"),
+        expr: "avg by(job)(process_resident_memory_bytes{job='node-exporter'})",
+        name: "Queries",
+        yAxisFormatter: PromConsole.NumberFormatter.humanizeNoSmallPrefix,
+        yHoverFormatter: PromConsole.NumberFormatter.humanizeNoSmallPrefix,
+        yUnits: "bytes",
+        yTitle: "Queries"
+    })
+</script>
+
+{{template "prom_content_tail" .}}
+
+{{template "tail"}}
