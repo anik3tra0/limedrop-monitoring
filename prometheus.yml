@@ -1,0 +1,11 @@
+## my global config
+global:
+  scrape_interval: 1m
+  external_labels:
+    cluster: 'local-cluster'
+
+scrape_configs:
+  - job_name: "node-exporter"
+    static_configs:
+      # Change this if you are on linux
+      - targets: [ "host.docker.internal:9100" ]

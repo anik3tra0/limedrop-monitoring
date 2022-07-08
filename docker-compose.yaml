@@ -1,0 +1,28 @@
+version: "3.5"
+services:
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - 9091:9090/tcp
+    volumes:
+      - ./data/prometheus:/data
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./consoles/limedrop-web.html:/etc/prometheus/consoles/limedrop-web.html:ro
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/data'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+    restart: always
+    networks:
+      - prom_net
+  node:
+    image: prom/node-exporter
+    ports:
+      - 9100:9100
+    restart: always
+    networks:
+      - prom_net
+networks:
+  prom_net:
+    driver: bridge
