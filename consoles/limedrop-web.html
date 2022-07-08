@@ -1,14 +1,14 @@
 {{template "head" .}}
 {{template "prom_content_head" .}}
-<h1>LimeDrop Web Server Metrics</h1>
+<h1>My Macbook Pro Metrics</h1>
 
-<strong>Server Status:</strong> {{ template "prom_query_drilldown" (args "up{job='node-exporter'}") }}
+<strong>Server Status:</strong> {{ template "prom_query_drilldown" (args "up{job='node-exporter-local'}") }}
 <br />
 <br />
-<strong>Current CPU Usage:</strong> {{ template "prom_query_drilldown" (args "sum(rate(node_cpu_seconds_total{instance='host.docker.internal:9100',mode!='idle'}[5m])) * 100 / 2" "%") }}
+<strong>Current CPU Usage:</strong> {{ template "prom_query_drilldown" (args "sum(rate(node_cpu_seconds_total{instance='host.docker.internal:9100', mode!='idle'}[5m])) * 100 / 2" "%") }}
 <br />
 <br />
-<strong>Current Memory Usage:</strong> {{ template "prom_query_drilldown" (args "100 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100" "%") }}
+<strong>Current Memory Usage:</strong> {{ template "prom_query_drilldown" (args "100 * (1 - (avg_over_time(node_memory_free_bytes{instance='host.docker.internal:9100'}[5m]) / avg_over_time(node_memory_total_bytes{instance='host.docker.internal:9100'}[5m])))" "%") }}
 {{template "prom_content_tail" .}}
 {{template "tail"}}
 
@@ -17,22 +17,22 @@
 {{template "prom_right_table_head"}}
 <tr>
     <th>MyJob</th>
-    <th>{{ template "prom_query_drilldown" (args "sum(up{job='node-exporter'})") }}
-        / {{ template "prom_query_drilldown" (args "count(up{job='node-exporter'})") }}
+    <th>{{ template "prom_query_drilldown" (args "sum(up{job='node-exporter-local'})") }}
+        / {{ template "prom_query_drilldown" (args "count(up{job='node-exporter-local'})") }}
     </th>
 </tr>
 <tr>
-    <td>CPU</td>
+    <td>Battery Full Charge in</td>
     <td>{{ template "prom_query_drilldown" (args
-        "avg by(job)(rate(process_cpu_seconds_total{job='node-exporter'}[5m]))"
-        "s/s" "humanizeNoSmallPrefix") }}
+        "node_power_supply_time_to_full_seconds{job='node-exporter-local', power_supply='InternalBattery-0'} / 60"
+        " minutes" "humanizeNoSmallPrefix") }}
     </td>
 </tr>
 <tr>
-    <td>Memory</td>
+    <td>Battery Current Charge</td>
     <td>{{ template "prom_query_drilldown" (args
-        "avg by(job)(process_resident_memory_bytes{job='node-exporter'})"
-        "B" "humanize1024") }}
+        "node_power_supply_current_capacity{power_supply='InternalBattery-0'}"
+        "%" "humanize1024") }}
     </td>
 </tr>
 {{template "prom_right_table_tail"}}
@@ -42,16 +42,28 @@
 <h1>Node Exporter</h1>
 
 <h3>Queries</h3>
-<div id="queryGraph"></div>
+<div id="memoryGraph"></div>
+</br>
+<div id="cpuGraph"></div>
 <script>
     new PromConsole.Graph({
-        node: document.querySelector("#queryGraph"),
-        expr: "avg by(job)(process_resident_memory_bytes{job='node-exporter'})",
-        name: "Queries",
+        node: document.querySelector("#memoryGraph"),
+        expr: "100 * (1 - (avg_over_time(node_memory_free_bytes[5m]) / avg_over_time(node_memory_total_bytes[5m])))",
+        name: "Memory",
         yAxisFormatter: PromConsole.NumberFormatter.humanizeNoSmallPrefix,
         yHoverFormatter: PromConsole.NumberFormatter.humanizeNoSmallPrefix,
-        yUnits: "bytes",
-        yTitle: "Queries"
+        yUnits: "%",
+        yTitle: "Memory"
+    })
+
+    new PromConsole.Graph({
+        node: document.querySelector("#cpuGraph"),
+        expr: "sum(rate(node_cpu_seconds_total{instance='host.docker.internal:9100', mode!='idle'}[5m])) * 100 / 2",
+        name: "CPU",
+        yAxisFormatter: PromConsole.NumberFormatter.humanizeNoSmallPrefix,
+        yHoverFormatter: PromConsole.NumberFormatter.humanizeNoSmallPrefix,
+        yUnits: "%",
+        yTitle: "CPU"
     })
 </script>
 
